@@ -4,7 +4,7 @@ from PIL import Image
 
 st.set_page_config(page_title="간식비 자동 정산기", layout="centered")
 st.title("🛒 간식비 자동 정산 시스템")
-st.write("바쁜 중환자실 업무, 간식비 정산은 AI에게 맡기세요!")
+st.write("바쁜 별관병동 업무, 간식비 정산은 AI에게 맡기세요!")
 
 # 1. 비밀 금고에서 API 키 자동으로 꺼내오기
 try:
