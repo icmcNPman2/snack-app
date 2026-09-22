@@ -43,7 +43,7 @@ if st.button("정산 시작하기", use_container_width=True):
     else:
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-pro')
+            model = genai.GenerativeModel('gemini-2.5-flash')
             
             memo_img = Image.open(uploaded_memo)
             receipt_img = Image.open(uploaded_receipt)
