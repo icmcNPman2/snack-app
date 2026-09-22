@@ -37,6 +37,8 @@ system_prompt = """
 """
 
 # 4. 정산 실행 로직
+import io  # 데이터 변환용 라이브러리 추가
+
 if st.button("정산 시작하기", use_container_width=True):
     if not uploaded_memo or not uploaded_receipt:
         st.warning("전표와 영수증 이미지를 모두 업로드해 주세요.")
@@ -67,4 +69,4 @@ if st.button("정산 시작하기", use_container_width=True):
                 st.markdown(response.text)
                 
         except Exception as e:
-            st.error(f"오류가 발생했습니다.\n상세 에러: {e}")
+            st.error(f"오류가 발생했습니다.\n상세 에러: {e}"
