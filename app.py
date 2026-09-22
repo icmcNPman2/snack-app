@@ -37,36 +37,34 @@ system_prompt = """
 """
 
 # 4. 정산 실행 로직
-import io  # 데이터 변환용 라이브러리 추가
+import io
 
 if st.button("정산 시작하기", use_container_width=True):
     if not uploaded_memo or not uploaded_receipt:
         st.warning("전표와 영수증 이미지를 모두 업로드해 주세요.")
     else:
         try:
-            genai.configure(api_key=api_key)
+            # [핵심] 스트림릿 고질병인 통신 먹통을 피하기 위해, 통신 방식을 'rest'로 강제 고정합니다.
+            genai.configure(api_key=api_key, transport="rest")
             model = genai.GenerativeModel('gemini-3.6-flash')
             
-            with st.spinner("사진을 순수 데이터로 분해해서 전송 중입니다..."):
-                # 1. 전표 이미지를 RGB로 까고 -> 줄이고 -> JPEG 데이터(바이트)로 갈아버림
+            with st.spinner("안전한 통신망(REST)으로 우회하여 분석 중입니다..."):
                 memo_img = Image.open(uploaded_memo).convert('RGB')
                 memo_img.thumbnail((800, 800))
                 memo_byte_arr = io.BytesIO()
                 memo_img.save(memo_byte_arr, format='JPEG')
                 memo_data = {"mime_type": "image/jpeg", "data": memo_byte_arr.getvalue()}
                 
-                # 2. 영수증 이미지도 똑같이 데이터(바이트)로 갈아버림
                 receipt_img = Image.open(uploaded_receipt).convert('RGB')
                 receipt_img.thumbnail((800, 800))
                 receipt_byte_arr = io.BytesIO()
                 receipt_img.save(receipt_byte_arr, format='JPEG')
                 receipt_data = {"mime_type": "image/jpeg", "data": receipt_byte_arr.getvalue()}
                 
-                # 사진 파일 대신, 완벽하게 정제된 데이터(data)를 구글에 꽂아 넣음
                 response = model.generate_content([system_prompt, memo_data, receipt_data])
                 
                 st.success("정산 완료!")
                 st.markdown(response.text)
                 
         except Exception as e:
-           st.error(f"오류가 발생했습니다.\n상세 에러: {e}")
+            st.error(f"오류가 발생했습니다.\n상세 에러: {e}")
