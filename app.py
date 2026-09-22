@@ -46,22 +46,13 @@ system_prompt = """
 
 # 5. 정산 실행 로직
 if st.button("정산 시작하기", use_container_width=True):
-    if not uploaded_memo or not uploaded_receipt:
-        st.warning("전표와 영수증 이미지를 모두 업로드해 주세요.")
-    else:
-        try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-3.6-flash')
-            
-            # 글씨 인식률이 유지되는 최적의 크기(800픽셀)로 압축하여 로딩 시간 단축
-            memo_img = resize_image(Image.open(uploaded_memo), max_width=800)
-            receipt_img = resize_image(Image.open(uploaded_receipt), max_width=800)
-            
-            with st.spinner("AI가 전표와 영수증을 대조 중입니다 (약 20~30초 소요)..."):
-                # 통신 먹통을 유발하는 stream=True 옵션 완전히 제거
-                response = model.generate_content([system_prompt, memo_img, receipt_img])
-                st.success("정산 완료!")
-                st.markdown(response.text)
-                
-        except Exception as e:
-            st.error(f"오류가 발생했습니다.\n상세 에러: {e}")
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-3.6-flash')
+        with st.spinner("통신 테스트 중..."):
+            # 사진 2장을 빼고 아주 단순한 인사말만 서버로 보냅니다.
+            response = model.generate_content("안녕? 연결 잘 들려?")
+            st.success("통신 성공!")
+            st.write(response.text)
+    except Exception as e:
+        st.error(f"오류가 발생했습니다.\n상세 에러: {e}")
