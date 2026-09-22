@@ -53,22 +53,15 @@ if st.button("정산 시작하기", use_container_width=True):
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-3.6-flash')
             
-            # 압축률 강화 (1024 -> 800픽셀)
+            # 글씨 인식률이 유지되는 최적의 크기(800픽셀)로 압축하여 로딩 시간 단축
             memo_img = resize_image(Image.open(uploaded_memo), max_width=800)
             receipt_img = resize_image(Image.open(uploaded_receipt), max_width=800)
             
-            with st.spinner("AI가 분석을 시작합니다..."):
-                # stream=True 옵션으로 실시간 답변 받기
-                response = model.generate_content([system_prompt, memo_img, receipt_img], stream=True)
-                st.success("데이터 수신 중...")
-                
-                # 빈 공간을 만들고, AI가 글자를 보내는 즉시 화면에 타자 치듯 출력
-                res_box = st.empty()
-                full_text = ""
-                
-                for chunk in response:
-                    full_text += chunk.text
-                    res_box.markdown(full_text)
+            with st.spinner("AI가 전표와 영수증을 대조 중입니다 (약 20~30초 소요)..."):
+                # 통신 먹통을 유발하는 stream=True 옵션 완전히 제거
+                response = model.generate_content([system_prompt, memo_img, receipt_img])
+                st.success("정산 완료!")
+                st.markdown(response.text)
                 
         except Exception as e:
             st.error(f"오류가 발생했습니다.\n상세 에러: {e}")
