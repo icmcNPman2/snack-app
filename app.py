@@ -45,15 +45,14 @@ if st.button("정산 시작하기", use_container_width=True):
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-3.6-flash')
             
-            with st.spinner("AI가 전표와 영수증을 대조 중입니다 (약 20~30초 소요)..."):
-                # 내장 썸네일 기능으로 서버 과부하 없이 비율 유지하며 안전하게 축소
-                memo_img = Image.open(uploaded_memo)
+            with st.spinner("AI가 뇌 정지 없이 대조 중입니다..."):
+                # convert('RGB')를 추가해 오류를 유발하는 투명도/특수 포맷을 싹 날려버립니다.
+                memo_img = Image.open(uploaded_memo).convert('RGB')
                 memo_img.thumbnail((800, 800))
                 
-                receipt_img = Image.open(uploaded_receipt)
+                receipt_img = Image.open(uploaded_receipt).convert('RGB')
                 receipt_img.thumbnail((800, 800))
                 
-                # 텍스트 대신 다시 원래대로 프롬프트와 안전해진 이미지 2장을 전송
                 response = model.generate_content([system_prompt, memo_img, receipt_img])
                 
                 st.success("정산 완료!")
