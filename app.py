@@ -3,52 +3,62 @@ import google.generativeai as genai
 from PIL import Image
 
 st.set_page_config(page_title="간식비 자동 정산기", layout="centered")
-st.title("🛒 간식비 자동 정산 시스템")
-st.write("바쁜 별관병동 업무, 간식비 정산은 AI에게 맡기세요!")
+st.title("🛒 간식비 자동 정산 시스템 (정신과 병동용)")
+st.write("복잡한 환자 간식비 정산, AI가 빠르게 처리해 드립니다.")
 
-# 1. 비밀 금고에서 API 키 자동으로 꺼내오기
+# 1. API 키 설정
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
 except:
-    st.error("스트림릿 설정(Secrets)에 API 키가 없습니다! 세팅을 먼저 해주세요.")
+    st.error("스트림릿 설정(Secrets)에 API 키가 없습니다.")
     st.stop()
 
 # 2. 이미지 업로드 영역
 st.header("1. 전표 및 영수증 업로드")
 col1, col2 = st.columns(2)
 with col1:
-    uploaded_memo = st.file_uploader("수기 주문 전표", type=["png", "jpg", "jpeg"])
+    uploaded_memo = st.file_uploader("환자 수기 전표", type=["png", "jpg", "jpeg"])
 with col2:
     uploaded_receipt = st.file_uploader("결제 영수증", type=["png", "jpg", "jpeg"])
 
-# 3. AI 분석 프롬프트 세팅
-system_prompt = """
-당신은 병동 간식비 정산 전문가입니다. 
-이미지 1(수기 주문 전표)과 이미지 2(결제 영수증)를 대조하여 환자/직원별 정산 내역을 산출하세요.
+# 3. 이미지 압축 함수 (속도 획기적 개선)
+def resize_image(image, max_width=1024):
+    width, height = image.size
+    if width > max_width:
+        new_height = int((max_width / width) * height)
+        return image.resize((max_width, new_height))
+    return image
 
-[정산 규칙]
-1. 수기 전표에서 취소선이 그어진 품목은 주문에서 제외합니다.
-2. 영수증에 표기된 품목명과 전표의 약칭(예: 오렌지쥬스P, 바우 등)을 문맥상 동일한 것으로 유연하게 매칭하세요.
-3. 매칭된 단가를 적용하여 인당 총 청구 금액을 계산하세요.
+# 4. 정신과 병동 전용 프롬프트
+system_prompt = """
+당신은 정신과 병동의 환자 간식비 정산 전문가입니다. 
+이미지 1(환자들의 수기 주문 전표)과 이미지 2(결제 영수증)를 대조하여 각 환자별 청구 금액을 산출하세요.
+
+[절대 규칙]
+1. 전표에 적힌 내역은 100% '환자'들의 간식 주문입니다. 직원용은 일절 없으므로 분류하려 하지 말고 모두 환자 기준으로 정산하세요.
+2. 수기 전표에 악필로 적힌 환자명(또는 병상 번호)과 품목 약칭(예: 바우, 초코 등)을 영수증의 정식 품목명과 문맥상 유연하게 매칭하세요.
+3. 수기 전표에서 취소선이 그어진 품목은 주문이 취소된 것이므로 정산에서 제외합니다.
 
 [출력 형식]
-반드시 아래 마크다운 표 형식으로만 출력하세요.
-| 이름 | 주문 품목 및 영수증 단가(원) | 청구 금액 |
+반드시 아래 마크다운 표 형식으로만 깔끔하게 출력하세요.
+| 환자명(병상) | 주문 품목 및 영수증 단가(원) | 총 청구 금액 |
 """
 
-# 4. 정산 실행 버튼 및 통신 로직
+# 5. 정산 실행 로직
 if st.button("정산 시작하기", use_container_width=True):
     if not uploaded_memo or not uploaded_receipt:
         st.warning("전표와 영수증 이미지를 모두 업로드해 주세요.")
     else:
         try:
             genai.configure(api_key=api_key)
+            # 가장 최신인 3.6 flash 모델 유지
             model = genai.GenerativeModel('gemini-3.6-flash')
             
-            memo_img = Image.open(uploaded_memo)
-            receipt_img = Image.open(uploaded_receipt)
+            # 원본 사진을 가볍게 압축하여 로딩 시간 절반으로 단축
+            memo_img = resize_image(Image.open(uploaded_memo))
+            receipt_img = resize_image(Image.open(uploaded_receipt))
             
-            with st.spinner("AI가 이미지를 분석하고 정산 중입니다... (약 10~20초 소요)"):
+            with st.spinner("AI가 이미지를 분석하고 정산 중입니다..."):
                 response = model.generate_content([system_prompt, memo_img, receipt_img])
                 st.success("정산 완료!")
                 st.markdown(response.text)
