@@ -21,15 +21,7 @@ with col1:
 with col2:
     uploaded_receipt = st.file_uploader("결제 영수증", type=["png", "jpg", "jpeg"])
 
-# 3. 이미지 압축 함수 (속도 획기적 개선)
-def resize_image(image, max_width=1024):
-    width, height = image.size
-    if width > max_width:
-        new_height = int((max_width / width) * height)
-        return image.resize((max_width, new_height))
-    return image
-
-# 4. 정신과 병동 전용 프롬프트
+# 3. 정신과 병동 전용 프롬프트
 system_prompt = """
 당신은 정신과 병동의 환자 간식비 정산 전문가입니다. 
 이미지 1(환자들의 수기 주문 전표)과 이미지 2(결제 영수증)를 대조하여 각 환자별 청구 금액을 산출하세요.
@@ -44,15 +36,28 @@ system_prompt = """
 | 환자명(병상) | 주문 품목 및 영수증 단가(원) | 총 청구 금액 |
 """
 
-# 5. 정산 실행 로직
+# 4. 정산 실행 로직
 if st.button("정산 시작하기", use_container_width=True):
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-3.6-flash')
-        with st.spinner("통신 테스트 중..."):
-            # 사진 2장을 빼고 아주 단순한 인사말만 서버로 보냅니다.
-            response = model.generate_content("안녕? 연결 잘 들려?")
-            st.success("통신 성공!")
-            st.write(response.text)
-    except Exception as e:
-        st.error(f"오류가 발생했습니다.\n상세 에러: {e}")
+    if not uploaded_memo or not uploaded_receipt:
+        st.warning("전표와 영수증 이미지를 모두 업로드해 주세요.")
+    else:
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-3.6-flash')
+            
+            with st.spinner("AI가 전표와 영수증을 대조 중입니다 (약 20~30초 소요)..."):
+                # 내장 썸네일 기능으로 서버 과부하 없이 비율 유지하며 안전하게 축소
+                memo_img = Image.open(uploaded_memo)
+                memo_img.thumbnail((800, 800))
+                
+                receipt_img = Image.open(uploaded_receipt)
+                receipt_img.thumbnail((800, 800))
+                
+                # 텍스트 대신 다시 원래대로 프롬프트와 안전해진 이미지 2장을 전송
+                response = model.generate_content([system_prompt, memo_img, receipt_img])
+                
+                st.success("정산 완료!")
+                st.markdown(response.text)
+                
+        except Exception as e:
+            st.error(f"오류가 발생했습니다.\n상세 에러: {e}")
