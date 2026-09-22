@@ -45,15 +45,23 @@ if st.button("정산 시작하기", use_container_width=True):
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-3.6-flash')
             
-            with st.spinner("AI가 뇌 정지 없이 대조 중입니다..."):
-                # convert('RGB')를 추가해 오류를 유발하는 투명도/특수 포맷을 싹 날려버립니다.
+            with st.spinner("사진을 순수 데이터로 분해해서 전송 중입니다..."):
+                # 1. 전표 이미지를 RGB로 까고 -> 줄이고 -> JPEG 데이터(바이트)로 갈아버림
                 memo_img = Image.open(uploaded_memo).convert('RGB')
                 memo_img.thumbnail((800, 800))
+                memo_byte_arr = io.BytesIO()
+                memo_img.save(memo_byte_arr, format='JPEG')
+                memo_data = {"mime_type": "image/jpeg", "data": memo_byte_arr.getvalue()}
                 
+                # 2. 영수증 이미지도 똑같이 데이터(바이트)로 갈아버림
                 receipt_img = Image.open(uploaded_receipt).convert('RGB')
                 receipt_img.thumbnail((800, 800))
+                receipt_byte_arr = io.BytesIO()
+                receipt_img.save(receipt_byte_arr, format='JPEG')
+                receipt_data = {"mime_type": "image/jpeg", "data": receipt_byte_arr.getvalue()}
                 
-                response = model.generate_content([system_prompt, memo_img, receipt_img])
+                # 사진 파일 대신, 완벽하게 정제된 데이터(data)를 구글에 꽂아 넣음
+                response = model.generate_content([system_prompt, memo_data, receipt_data])
                 
                 st.success("정산 완료!")
                 st.markdown(response.text)
