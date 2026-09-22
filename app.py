@@ -69,4 +69,4 @@ if st.button("정산 시작하기", use_container_width=True):
                 st.markdown(response.text)
                 
         except Exception as e:
-            st.error(f"오류가 발생했습니다.\n상세 에러: {e}"
+            st.error(f"오류가 발생했습니다.\n상세 에러: {e})"
