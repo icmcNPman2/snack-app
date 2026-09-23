@@ -71,8 +71,8 @@ if st.button("정산 시작하기", use_container_width=True):
                     }]
                 }
 
-                # 4. 직통으로 쏘기 (60초 넘어가면 칼같이 강제 종료)
-                response = requests.post(url, json=payload, timeout=60)
+                # 4. 직통으로 쏘기 (180초 넘어가면 칼같이 강제 종료)
+                response = requests.post(url, json=payload, timeout=180)
                 
                 if response.status_code == 200:
                     result = response.json()
@@ -83,7 +83,7 @@ if st.button("정산 시작하기", use_container_width=True):
                     st.error(f"서버가 에러를 뱉었습니다 (코드 {response.status_code}):\n{response.text}")
                     
             except requests.exceptions.Timeout:
-                st.error("통신 시간이 60초를 초과하여 강제 종료되었습니다. 사진이 너무 복잡하거나 구글 서버가 지연되고 있습니다.")
+                st.error("통신 시간이 180초를 초과하여 강제 종료되었습니다. 사진이 너무 복잡하거나 구글 서버가 지연되고 있습니다.")
             except Exception as e:
                 st.error(f"오류가 발생했습니다.\n상세 에러: {e}")
 
